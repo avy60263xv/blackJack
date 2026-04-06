@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>21點策略練習器</title>
     <style>
         :root { 
@@ -33,8 +34,35 @@
             gap: 25px; 
             padding: 20px; 
             box-sizing: border-box; 
-            height: 650px; 
+            /* 移除固定的 height 以便 RWD 堆疊 */
+            min-height: 650px; 
             margin: 0 auto; 
+        }
+
+        /* 新增 RWD 邏輯：當螢幕寬度小於 768px 時，表格自動往下排 */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+                height: auto;
+            }
+            .game-section {
+                flex: 0 1 auto;
+                width: 100%;
+                max-width: 450px;
+                margin-bottom: 20px;
+            }
+            .strategy-section {
+                flex: 0 1 auto;
+                width: 100%;
+                max-width: 450px;
+                font-size: 11px; /* 手機版字體稍微加大便於閱讀 */
+                min-height: 575px;
+            }
+            /* 讓表格在手機上可以橫向滑動，不撐開畫面 */
+            .strategy-section {
+                overflow-x: auto;
+            }
         }
 
         /* 遊戲區域 */
@@ -264,7 +292,7 @@
 </div>
 
 <script>
-    // [與先前邏輯一致，此處略過未改動以維持功能穩定]
+    // [保持原有的所有 JS 邏輯不變]
     const strategyData = {
         hard: { '17+':['S','S','S','S','S','S','S','S','S','S'], '13-16':['S','S','S','S','S','H','H','H','H','H'], '12':['H','H','S','S','S','H','H','H','H','H'], '11':['D','D','D','D','D','D','D','D','D','H'], '10':['D','D','D','D','D','D','D','D','H','H'], '9':['H','D','D','D','D','H','H','H','H','H'], '5-8':['H','H','H','H','H','H','H','H','H','H'] },
         soft: { 'A8+':['S','S','S','S','S','S','S','S','S','S'], 'A7':['S','Ds','Ds','Ds','Ds','S','S','H','H','H'], 'A6':['H','D','D','D','D','H','H','H','H','H'], 'A4-5':['H','H','D','D','D','H','H','H','H','H'], 'A2-3':['H','H','H','D','D','H','H','H','H','H'] },
@@ -335,12 +363,10 @@
         
         let sum = calculateSum(state.pHand);
 
-        // 1. 20點以上與投降 (優先權最高)
         if (sum >= 20) return 'S';
         if (sum === 16 && [9, 10, 11].includes(d)) return 'SUR';
         if (sum === 15 && d === 10) return 'SUR';
 
-        // 2. 對子 (Pair) 邏輯
         const isPair = (p1.r === p2.r);
         if (isPair) {
             const r = p1.r;
@@ -348,23 +374,18 @@
             if (['10','J','Q','K'].includes(r)) return 'S';
             const action = strategyData.split[r+r] ? strategyData.split[r+r][dIdx] : 'N';
             if (action === 'Y') return 'Y';
-            // 若為 'N'，則流向硬牌邏輯
         }
 
-        // 3. 軟牌 (Soft) 邏輯 - 排除對子(AA)
         const isSoft = (p1.r === 'A' || p2.r === 'A') && !isPair;
         if (isSoft) {
             const otherCard = (p1.r === 'A') ? p2.v : p1.v;
             if (otherCard >= 8) return 'S';
-            // 依照 otherCard 找對應的 key
             let key = 'A' + otherCard;
             if (otherCard === 4 || otherCard === 5) key = 'A4-5';
             if (otherCard === 2 || otherCard === 3) key = 'A2-3';
-            
             return strategyData.soft[key] ? strategyData.soft[key][dIdx] : 'H';
         }
 
-        // 4. 硬牌 (Hard) 邏輯
         if (sum >= 17) return 'S';
         if (sum >= 13) return strategyData.hard['13-16'][dIdx];
         if (sum === 12) return strategyData.hard['12'][dIdx];
