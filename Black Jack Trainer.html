@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>21點策略練習器</title>
+    <style>
+        :root { 
+            --bg: #121417; 
+            --card-bg: #fff; 
+            --text: #ecf0f1; 
+            --accent: #2c3e50;
+            --panel-bg: #1e272e;
+            --border: #34495e;
+        }
+
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            overflow-x: hidden; 
+        }
+
+        .main-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            width: 100%; 
+            max-width: 1400px; 
+            gap: 25px; 
+            padding: 20px; 
+            box-sizing: border-box; 
+            height: 650px; 
+            margin: 0 auto; 
+        }
+
+        /* 遊戲區域 */
+        .game-section { 
+            flex: 0 1 450px; 
+            background: var(--panel-bg); 
+            border-radius: 12px; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between; 
+            border: 1px solid var(--border); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .score-board { 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-around; 
+            font-size: 13px; 
+            background: rgba(0,0,0,0.4); 
+            padding: 8px; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+        }
+        
+        .card-area { 
+            display: flex; 
+            gap: 8px; 
+            min-height: 100px; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 5px 0; 
+        }
+
+        .card { 
+            width: 70px; 
+            height: 105px; 
+            background: var(--card-bg); 
+            border-radius: 8px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            padding: 8px; 
+            color: #000; 
+            font-size: 20px; 
+            font-weight: bold; 
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.4); 
+            margin: 10px;
+        }
+
+        .card.red { 
+            color: #d63031; 
+        }
+
+        .card .suit-center { 
+            font-size: 35px; 
+            align-self: center; 
+        }
+
+        /* 控制按鈕 */
+        .controls { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            width: 100%; 
+        }
+
+        button { 
+            padding: 12px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 14px; 
+            transition: 0.2s; 
+            margin: 3px;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-h { background: #3498db; color: white; }
+        .btn-s { background: #f39c12; color: white; }
+        .btn-d { background: #27ae60; color: white; }
+        .btn-y { background: #9b59b6; color: white; }
+        .btn-sur { background: #636e72; color: white; }
+        
+        .btn-next { 
+            grid-column: span 3; 
+            background: #dfe6e9; 
+            color: #2d3436; 
+            font-size: 16px; 
+            margin-top: 5px; 
+        }
+
+        /* 策略表區域 */
+        .strategy-section { 
+            flex: 0 1 320px; 
+            background: var(--accent); 
+            border-radius: 12px; 
+            padding: 10px; 
+            overflow-y: auto; 
+            font-size: 10px; 
+            border: 1px solid var(--border); 
+        }
+
+        /* 自訂捲軸樣式 */
+        .strategy-section::-webkit-scrollbar {
+            width: 5px;
+        }
+        .strategy-section::-webkit-scrollbar-thumb {
+            background: #455a64;
+            border-radius: 10px;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white; 
+            color: black; 
+            margin-bottom: 10px; 
+        }
+
+        th, td { 
+            border: 1px solid #ccc; 
+            padding: 2px; 
+            text-align: center; 
+        }
+
+        .th-head { 
+            background: #eee; 
+            font-weight: bold; 
+        }
+        
+        /* 策略格顏色 */
+        .cell-S { background: #f1c40f; } 
+        .cell-H { background: #fff; } 
+        .cell-D { background: #2ecc71; }
+        .cell-Ds { background: #1abc9c; } 
+        .cell-Y { background: #2ecc71; } 
+        .cell-SUR { background: #bdc3c7; }
+
+        /* 回饋訊息 */
+        .feedback { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 8px; 
+            display: none; 
+            font-size: 14px; 
+            line-height: 1.4; 
+            margin-top: 10px; 
+            box-sizing: border-box;
+        }
+
+        .correct-msg { 
+            background: #1b4d3e; 
+            color: #a2ffd5; 
+            border: 1px solid #2ecc71; 
+        }
+
+        .wrong-msg { 
+            background: #4d1b1b; 
+            color: #ffadad; 
+            border: 1px solid #e74c3c; 
+        }
+
+        .logic-hint { 
+            font-size: 12px; 
+            margin-top: 5px; 
+            color: #dfe6e9; 
+            font-style: italic; 
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="margin: 15px 0;">21點策略訓練</h2>
+
+<div class="main-container">
+    <div class="game-section">
+        <div class="score-board">
+            <span>正確: <span id="count-c">0</span></span>
+            <span>錯誤: <span id="count-w">0</span></span>
+            <span>準確率: <span id="accuracy">0%</span></span>
+        </div>
+
+        <div style="font-size: 13px; color: #bdc3c7;">莊家明牌</div>
+        <div id="dealer-cards" class="card-area"></div>
+
+        <div style="font-size: 13px; color: #bdc3c7;">你 (<span id="hand-val">0</span>)</div>
+        <div id="player-cards" class="card-area"></div>
+
+        <div class="controls">
+            <button class="btn-h" onclick="handleInput('H')">要牌 (H)</button>
+            <button class="btn-s" onclick="handleInput('S')">停牌 (S)</button>
+            <button class="btn-d" onclick="handleInput('D')">倍注 (D)</button>
+            <button class="btn-y" id="btn-split" onclick="handleInput('Y')">分牌 (Y)</button>
+            <button class="btn-sur" onclick="handleInput('SUR')">投降 (Sur)</button>
+            <button class="btn-next" onclick="initGame()">下一局</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+    </div>
+
+    <div class="strategy-section">
+        <p style="margin:0 0 5px 0;">Hard (硬牌)</p>
+        <table id="table-hard"></table>
+        <p style="margin:10px 0 5px 0;">Soft (軟牌)</p>
+        <table id="table-soft"></table>
+        <p style="margin:10px 0 5px 0;">Pair (分牌)</p>
+        <table id="table-split"></table>
+        <p style="margin:10px 0 5px 0;">Surrender (投降)</p>
+        <table>
+            <tr><th class="th-head">P\D</th><th>9</th><th>10</th><th>A</th></tr>
+            <tr><td class="th-head">16</td><td class="cell-SUR">SUR</td><td class="cell-SUR">SUR</td><td class="cell-SUR">SUR</td></tr>
+            <tr><td class="th-head">15</td><td>-</td><td class="cell-SUR">SUR</td><td>-</td></tr>
+        </table>
+    </div>
+</div>
+
+<script>
+    // [與先前邏輯一致，此處略過未改動以維持功能穩定]
+    const strategyData = {
+        hard: { '17+':['S','S','S','S','S','S','S','S','S','S'], '13-16':['S','S','S','S','S','H','H','H','H','H'], '12':['H','H','S','S','S','H','H','H','H','H'], '11':['D','D','D','D','D','D','D','D','D','H'], '10':['D','D','D','D','D','D','D','D','H','H'], '9':['H','D','D','D','D','H','H','H','H','H'], '5-8':['H','H','H','H','H','H','H','H','H','H'] },
+        soft: { 'A8+':['S','S','S','S','S','S','S','S','S','S'], 'A7':['S','Ds','Ds','Ds','Ds','S','S','H','H','H'], 'A6':['H','D','D','D','D','H','H','H','H','H'], 'A4-5':['H','H','D','D','D','H','H','H','H','H'], 'A2-3':['H','H','H','D','D','H','H','H','H','H'] },
+        split:{ 'AA':['Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'], 'TT':['N','N','N','N','N','N','N','N','N','N'], '99':['Y','Y','Y','Y','Y','N','Y','Y','N','N'], '88':['Y','Y','Y','Y','Y','Y','Y','Y','Y','Y'], '77':['Y','Y','Y','Y','Y','Y','N','N','N','N'], '66':['N','Y','Y','Y','Y','N','N','N','N','N'], '44':['N','N','N','N','N','N','N','N','N','N'], '33':['N','N','Y','Y','Y','Y','N','N','N','N'],'22':['N','N','Y','Y','Y','Y','N','N','N','N'] }
+    };
+
+    const probabilityExplainer = {
+        'SUR': "【止損機率】莊家勝率高，投降穩定收回 50% 籌碼，優於拼命要牌的期望值。",
+        'Y': "【最大化優勢】拆分對子可擺脫劣勢手牌或利用莊家弱牌贏取雙倍獎金。",
+        'D': "【數學優勢】此時你拿到 10 點的機率約 30.7%，應最大化利潤。",
+        'S': "【等待自爆】莊家弱牌時爆牌率約 35-42%，停牌等莊家爆牌即可。",
+        'H': "【積極進攻】莊家明牌強，你現有點數無法獲勝，必須冒險拼點數。",
+        'Ds': "【雙重策略】優先考慮倍注，若規則不允許則改用停牌。"
+    };
+
+    const suits = [{s:'♠', c:'black'}, {s:'♥', c:'red'}, {s:'♣', c:'black'}, {s:'♦', c:'red'}];
+    const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    let state = { pHand: [], dCard: {}, cCorrect: 0, cWrong: 0, solved: false };
+
+    function createTableRows(labels, dataSet) {
+        let html = `<tr><th class="th-head">P\\D</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>A</th></tr>`;
+        labels.forEach(l => { 
+            html += `<tr><td class="th-head">${l}</td>`; 
+            dataSet[l].forEach(a => { html += `<td class="cell-${a}">${a}</td>`; }); 
+            html += `</tr>`; 
+        });
+        return html;
+    }
+
+    function initGame() {
+        state.solved = false;
+        state.pHand = [getCard(), getCard()];
+        if(Math.random() < 0.3) state.pHand[1] = JSON.parse(JSON.stringify(state.pHand[0]));
+        state.dCard = getCard();
+        document.getElementById('dealer-cards').innerHTML = renderCard(state.dCard);
+        document.getElementById('player-cards').innerHTML = state.pHand.map(renderCard).join('');
+        document.getElementById('btn-split').disabled = (state.pHand[0].r !== state.pHand[1].r);
+        document.getElementById('feedback').style.display = 'none';
+        let t = calculateSum(state.pHand);
+        document.getElementById('hand-val').innerText = t;
+    }
+
+    function calculateSum(hand) {
+        let sum = hand.reduce((acc, c) => acc + c.v, 0);
+        let aces = hand.filter(c => c.r === 'A').length;
+        while (sum > 21 && aces > 0) { sum -= 10; aces--; }
+        return sum;
+    }
+
+    function getCard() { 
+        const r = ranks[Math.floor(Math.random()*ranks.length)]; 
+        const s = suits[Math.floor(Math.random()*suits.length)]; 
+        let v = parseInt(r); 
+        if(['J','Q','K','10'].includes(r)) v = 10; 
+        if(r === 'A') v = 11; 
+        return { r, s: s.s, color: s.c, v }; 
+    }
+
+    function renderCard(c) { 
+        return `<div class="card ${c.color}"><div>${c.r}</div><div class="suit-center">${c.s}</div></div>`; 
+    }
+
+    function getBestAction() {
+        const d = state.dCard.v, 
+            p1 = state.pHand[0], 
+            p2 = state.pHand[1], 
+            dIdx = d - 2; 
+        
+        let sum = calculateSum(state.pHand);
+
+        // 1. 20點以上與投降 (優先權最高)
+        if (sum >= 20) return 'S';
+        if (sum === 16 && [9, 10, 11].includes(d)) return 'SUR';
+        if (sum === 15 && d === 10) return 'SUR';
+
+        // 2. 對子 (Pair) 邏輯
+        const isPair = (p1.r === p2.r);
+        if (isPair) {
+            const r = p1.r;
+            if (r === 'A') return 'Y';
+            if (['10','J','Q','K'].includes(r)) return 'S';
+            const action = strategyData.split[r+r] ? strategyData.split[r+r][dIdx] : 'N';
+            if (action === 'Y') return 'Y';
+            // 若為 'N'，則流向硬牌邏輯
+        }
+
+        // 3. 軟牌 (Soft) 邏輯 - 排除對子(AA)
+        const isSoft = (p1.r === 'A' || p2.r === 'A') && !isPair;
+        if (isSoft) {
+            const otherCard = (p1.r === 'A') ? p2.v : p1.v;
+            if (otherCard >= 8) return 'S';
+            // 依照 otherCard 找對應的 key
+            let key = 'A' + otherCard;
+            if (otherCard === 4 || otherCard === 5) key = 'A4-5';
+            if (otherCard === 2 || otherCard === 3) key = 'A2-3';
+            
+            return strategyData.soft[key] ? strategyData.soft[key][dIdx] : 'H';
+        }
+
+        // 4. 硬牌 (Hard) 邏輯
+        if (sum >= 17) return 'S';
+        if (sum >= 13) return strategyData.hard['13-16'][dIdx];
+        if (sum === 12) return strategyData.hard['12'][dIdx];
+        if (sum === 11) return strategyData.hard['11'][dIdx];
+        if (sum === 10) return strategyData.hard['10'][dIdx];
+        if (sum === 9) return strategyData.hard['9'][dIdx];
+        return 'H'; 
+    }
+
+    function handleInput(choice) {
+        if(state.solved) return;
+        const correct = getBestAction();
+        const f = document.getElementById('feedback');
+        f.style.display = 'block';
+        let isCorrect = (choice === correct) || (correct === 'Ds' && (choice === 'D' || choice === 'S')) || (correct === 'N' && choice === 'H');
+        
+        if(isCorrect) {
+            state.cCorrect++;
+            f.className = 'feedback correct-msg';
+            f.innerHTML = `<strong>正確決策！</strong>`;
+        } else {
+            state.cWrong++;
+            f.className = 'feedback wrong-msg';
+            const map = {H:'要牌(Hit)', S:'停牌(Stand)', D:'倍注(Double)', Y:'分牌(Split)', SUR:'投降(Surr)', Ds:'倍注/停牌', N:'要牌'};
+            f.innerHTML = `<strong>應選 ${map[correct]}</strong><br><div class="logic-hint">${probabilityExplainer[correct] || "遵循數學期望值能將賭場優勢降至最低。"}</div>`;
+        }
+        state.solved = true; 
+        updateStats();
+    }
+
+    function updateStats() {
+        document.getElementById('count-c').innerText = state.cCorrect;
+        document.getElementById('count-w').innerText = state.cWrong;
+        const t = state.cCorrect + state.cWrong;
+        document.getElementById('accuracy').innerText = t === 0 ? "0%" : Math.round(state.cCorrect/t*100) + "%";
+    }
+
+    document.getElementById('table-hard').innerHTML = createTableRows(['17+','13-16','12','11','10','9','5-8'], strategyData.hard);
+    document.getElementById('table-soft').innerHTML = createTableRows(['A8+','A7','A6','A4-5','A2-3'], strategyData.soft);
+    document.getElementById('table-split').innerHTML = createTableRows(['AA','TT','99','88','77','66','44', '33', '22'], strategyData.split);
+    initGame();
+</script>
+</body>
+</html>
